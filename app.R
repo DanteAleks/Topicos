@@ -46,10 +46,10 @@ base3 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
 
 ui <- fluidPage(
     
-#    sidebarLayout(
-        
-#    sidebarPanel(
-        fluidRow(column(12, wellPanel(
+    #    sidebarLayout(
+    
+    #    sidebarPanel(
+    fluidRow(column(12, wellPanel(
         numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=NULL,min=1),
         
         selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
@@ -57,46 +57,46 @@ ui <- fluidPage(
         
         selectInput(inputId = "UF",label = "Estado", 
                     choices = unique(base2$uf),selected = NULL),
-       
+        
         
         selectInput(inputId ="mun",label = "Municipio", 
                     choices = NULL)))),
-#        ),
+    #        ),
     
-#    mainPanel(
+    #    mainPanel(
     
     titlePanel("Trabalho Topicos "),
     navbarPage("Emprego e Renda", position = 'static-top'),
     theme=shinythemes::shinytheme('cosmo'),
     fixedRow(
         column(6, 
-            fluidRow(column(12, wellPanel(
-                
-                leafletOutput(outputId = "map",width=854, height = 480)))),
-            
-            fluidRow(column(12,wellPanel(
-                textOutput('fonte')
-            )))),
-    #    column(4,
-            # fluidRow(column(6,wellPanel(
-           #                 tableOutput('tabela'))),
-          #            column(6,wellPanel(
-         #                   tableOutput('tabela2')))),
+               fluidRow(column(12, wellPanel(
+                   
+                   leafletOutput(outputId = "map",width=854, height = 480)))),
+               
+               fluidRow(column(12,wellPanel(
+                   textOutput('fonte')
+               )))),
+        #    column(4,
+        # fluidRow(column(6,wellPanel(
+        #                 tableOutput('tabela'))),
+        #            column(6,wellPanel(
+        #                   tableOutput('tabela2')))),
         #     fluidRow(column(12, wellPanel(
-                #textOutput('indicador')))
-               #))
+        #textOutput('indicador')))
+        #))
     )
 )
 ##))
 
 server <- function(input, output,session) {
-
+    
     
     
     UF = reactive({
         filter(base2, uf == input$UF)
     }) 
-        
+    
     observeEvent(UF(), {
         choices <- unique(UF()$NomeMun)
         updateSelectInput(session, "mun", choices = choices) 
@@ -108,7 +108,7 @@ server <- function(input, output,session) {
     
     SetorProdutivo = reactive({
         filter(base1,  Setores == input$setor_produtivo)
-#        setornum <-as.numeric(base1$setnum)
+        #        setornum <-as.numeric(base1$setnum)
     }) 
     
     
@@ -116,23 +116,24 @@ server <- function(input, output,session) {
     vals <- reactiveValues ()
     
     observe({vals<-SetorProdutivo()
-            invest<-Investimento()
-            Setornum<-as.numeric(vals$setnum)
-            vals<- select(base1,-c(setnum,Setores))
-            valsmat<- data.matrix(vals)
-            Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
-            X <- valsmat %*% Y 
-            delta <- X-valsmat[,Setornum]})
+    invest<-Investimento()
+    Setornum<-as.numeric(vals$setnum)
+    vals<- select(base1,-c(setnum,Setores))
+    valsmat<- data.matrix(vals)
+    Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
+    X <- valsmat %*% Y 
+    delta <- X-valsmat[,Setornum]
+    print(delta)})
     
-#    observe(vals<-SetorProdutivo())
+    #    observe(vals<-SetorProdutivo())
     
-#    valsmat<- as.matrix(vals)
+    #    valsmat<- as.matrix(vals)
     
     #################################3parte a resolver ##############################
     
     
-#    observe(valsmat$a <- Investimento() )
-#     Y = matrix(c(rep.int(0,(valsmat-1)),Investimento(),rep.int(0,(length(Setores)-valsmat))),nrow=length(Setores))
+    #    observe(valsmat$a <- Investimento() )
+    #     Y = matrix(c(rep.int(0,(valsmat-1)),Investimento(),rep.int(0,(length(Setores)-valsmat))),nrow=length(Setores))
     
     
     output$map = renderLeaflet({
@@ -141,18 +142,18 @@ server <- function(input, output,session) {
     
     
     #output$map <- renderLeaflet({
-       # leaflet() %>%
-         #   addTiles(
-         #       urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-        #        attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-        #    ) %>%
+    # leaflet() %>%
+    #   addTiles(
+    #       urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+    #        attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+    #    ) %>%
     #        setView(lng = -52.4704, lat = -12.3829, zoom = 4)
-   # })
+    # })
     
     
-
     
-        name <- c("Brasil","Argentina","Venezuela","Alemanha","Inglaterra","China","Japão","Australia","Russia","Canada")
+    
+    name <- c("Brasil","Argentina","Venezuela","Alemanha","Inglaterra","China","Japão","Australia","Russia","Canada")
     posi <- c(1,2,3,4,5,6,7,8,9,10)
     tab <- data.frame(name,posi)
     output$tabela <- renderTable({
@@ -171,5 +172,7 @@ server <- function(input, output,session) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
+
 
 
