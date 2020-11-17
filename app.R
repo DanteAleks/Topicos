@@ -33,7 +33,7 @@ base2<- base2 %>%  mutate(estado=case_when(uf=="AC"~"Acre", uf=="AL"~"Alagoas",
                                            uf=="RJ"~"Rio de Janeiro", uf=="RN"~"Rio Grande do Norte",
                                            uf=="RS"~"Rio Grande do Sul", uf=="RO"~"Rondonia",
                                            uf=="RR"~"Roraima", uf=="SC"~"Santa Catarina",
-                                           uf=="SP"~"S�o Paulo", uf=="SE"~"Sergipe",
+                                           uf=="SP"~"São Paulo", uf=="SE"~"Sergipe",
                                            uf=="TO"~"Tocantins ",
 ))
 
@@ -153,7 +153,7 @@ server <- function(input, output,session) {
     
     
     
-    name <- c("Brasil","Argentina","Venezuela","Alemanha","Inglaterra","China","Japão","Australia","Russia","Canada")
+    name <- c("Brasil","Argentina","Venezuela","Alemanha","Inglaterra","China","JapÃ£o","Australia","Russia","Canada")
     posi <- c(1,2,3,4,5,6,7,8,9,10)
     tab <- data.frame(name,posi)
     output$tabela <- renderTable({
@@ -166,10 +166,10 @@ server <- function(input, output,session) {
         "Indicador sobre o impacto do setor que recebeu o investimento em cadeias produtivas anteriores ou posteriores."
     })
     output$fonte <- renderText({
-        "Indicação das bases de dados utilizadas com as respectivas fontes."
+        "IndicaÃ§Ã£o das bases de dados utilizadas com as respectivas fontes."
     })
 }
-
+### Teste edição
 # Run the application 
 shinyApp(ui = ui, server = server)
 
