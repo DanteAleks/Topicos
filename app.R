@@ -56,7 +56,7 @@ ui <- fluidPage(
                     choices = base1$Setores,selected = NULL),
         
         selectInput(inputId = "UF",label = "Estado", 
-                    choices = unique(base2$uf),selected = NULL),
+                    choices = unique(base2$estado),selected = NULL),
         
         
         selectInput(inputId ="mun",label = "Municipio", 
@@ -94,7 +94,7 @@ server <- function(input, output,session) {
     
     
     UF = reactive({
-        filter(base2, uf == input$UF)
+        filter(base2, estado == input$UF)
     }) 
     
     observeEvent(UF(), {
@@ -111,10 +111,16 @@ server <- function(input, output,session) {
         #        setornum <-as.numeric(base1$setnum)
     }) 
     
+    CODMUN = reactive({
+        filter( base2, NomeMun == input$mun) %>% select(codmun)
+    })
+    
+#    observeEvent(CODMUN(), {
+#        codigomm <- base2$codmun
+#    })
     
     
-    vals <- reactiveValues ()
-    
+    vals <- reactiveValues()
     observe({vals<-SetorProdutivo()
     invest<-Investimento()
     Setornum<-as.numeric(vals$setnum)
@@ -123,7 +129,16 @@ server <- function(input, output,session) {
     Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
     X <- valsmat %*% Y 
     delta <- X-valsmat[,Setornum]
-    print(delta)})
+    fator_1 <- base2[base2$estado==input$UF,Setornum+1]### Verificar NA no final
+    codigom<- CODMUN()
+    alpha <- 1 # parametro da equacao que pode, ou nao, ser definido: default = 1
+    beta <- 1
+    fator_2 <- base3[base3$destino==codigom$codmun,3]
+    i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) # calculo dos indices para cada municipio da UF escolhida
+    i_mun_a <- base2[base2$codmun==codigom$codmun,72]
+    efeito <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
+#    base2_uf$efeito <- efeito
+    print(efeito)})
     
     #    observe(vals<-SetorProdutivo())
     

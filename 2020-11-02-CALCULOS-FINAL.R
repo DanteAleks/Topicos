@@ -1,4 +1,4 @@
-### Cálculos para os resultados do topico Emprego e Renda ###
+### C?lculos para os resultados do topico Emprego e Renda ###
 
 install.packages("openxlsx")
 install.packages("dplyr")
@@ -8,13 +8,13 @@ install.packages("stringr")
 library(openxlsx)
 
 # Base 1: Matriz de Leontief
-base1 <- read.xlsx("/Users/gilson/Documents/GILSON/UNB/1-ESTATISTICA/1-2020-TOPICOS/BASES-DE-DADOS/BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
+base1 <- read.xlsx("C:/Documentos/Topicos/BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
 
 # Base 2: RAIS compilada IBGE
-base2 <- read.xlsx("/Users/gilson/Documents/GILSON/UNB/1-ESTATISTICA/1-2020-TOPICOS/BASES-DE-DADOS/BASES-EMPREGO-E-RENDA.xlsx",sheet=7)
+base2 <- read.xlsx("C:/Documentos/Topicos/BASES-EMPREGO-E-RENDA.xlsx",sheet=7)
 
 # Base 3: Distancias entre municipios
-base3 <- read.xlsx("/Users/gilson/Documents/GILSON/UNB/1-ESTATISTICA/1-2020-TOPICOS/BASES-DE-DADOS/BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
+base3 <- read.xlsx("C:/Documentos/Topicos/BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
 
 # Calcular a equacao matricial: X=B*Y
 # X = vetor producao
@@ -38,22 +38,34 @@ Y = matrix(c(rep.int(0,(setor_escolhido-1)),aumento_demanda,rep.int(0,(length(se
 Y
 X = base1_mat %*% Y # calculo do vetor producao para o aumento da demanda (Y)
 
+
+
 # Impacto em todos os setores devido ao aumento da demanda final no setor escolhido
 delta <- X-base1_mat[,setor_escolhido] # variacao do vetor producao: final (X) menos inicial (Leontief)
 delta
 head(delta)
 
+
+
 # Selecao do municipio
+
+
 
 library(dplyr)
 library(stringr)
 
+
+
 # Primeiro: usuario devera selecionar a sigla da UF, em letras maiusculas
 uf <- "SP" # UF selecionada pelo usuario
+
+
 
 base2$uf <- str_sub(base2$`Municipio/Setores`,8,9) # inserindo a coluna UF na Base 2
 base2$municipios <- str_sub(base2$`Municipio/Setores`,11) # inserindo a coluna Municipios na Base 2
 base2$codigo <- str_sub(base2$`Municipio/Setores`,1,6) # inserindo a coluna com codigo do municipio na Base 2
+
+
 
 base2_uf <- base2[base2$uf==uf,] # selecionado as linhas da UF indicada pelo usuario
 municipios <- str_sub(base2_uf$municipio) # nomes dos municipios da UF selecionada
@@ -68,13 +80,13 @@ mun_selecionado <- municipios[563] # Municipio da UF selecionado pelo usuario
 # O limite geografico do impacto sera a UF, dada a limitacao da base de dados das distancias
 
 codigo_mun_a <- base2_uf[base2_uf$municipios==mun_selecionado,71] # codigo do municipio A
+codigo_mun_a
 
 alpha <- 1 # parametro da equacao que pode, ou nao, ser definido: default = 1
 beta <- 1 # parametro da equacao que pode, ou nao, ser definido: default = 1
 
 fator_1 <- base2_uf[,setor_escolhido+1]
 fator_2 <- base3[base3$destino==codigo_mun_a,3]
-
 i_mun_b = alpha*log(fator_1)+beta*log(fator_2) # calculo dos indices para cada municipio da UF escolhida
 base2_uf$indice <- i_mun_b # incluindo a coluna "indice" na Base 2_UF
 
@@ -83,10 +95,15 @@ base2_uf$indice <- i_mun_b # incluindo a coluna "indice" na Base 2_UF
 i_mun_a <- base2_uf[base2_uf$municipios==mun_selecionado,72]
 
 efeito <- (i_mun_b/sum(base2_uf$indice>0))*delta[setor_escolhido,]
+efeito
 
 base2_uf$efeito <- efeito # incluindo a variavel "efeito" na Base 2_UF
 
+
+
 # CONCLUSAO:
+
+
 
 # Dada a limitacao da base de dados 3, referente a distancia entre os municipios,
 # o efeito do aumento da demanda em um municipio de uma UF sera calculado nos
@@ -95,5 +112,4 @@ base2_uf$efeito <- efeito # incluindo a variavel "efeito" na Base 2_UF
 # Obs: alguns municipios apresentam valor para o efeito como "-Inf", pois esses
 # municipios nao constam na base de dados 3, da distancia entre municipios, portanto,
 # nao terao os respectivos efeitos representados.
-
 
