@@ -1,4 +1,4 @@
-setwd("C:/Documentos/Topicos")
+setwd("C:/Users/carlo/Documents/Faculdade/Topicos/Shinny-Topicos/Topicos")
 
 #install.packages("openxlsx")
 
@@ -7,6 +7,19 @@ library(shiny)
 library(leaflet)
 library(openxlsx)
 library(tidyverse)
+require(rgdal)
+
+
+#Shape Municipios 2019
+shp<- readOGR("BR_Municipios_2019.shp")
+
+summary(shp)
+
+#####Variavel para o Bind
+head(shp$CD_MUN,5)
+mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
+
+
 
 
 # Base 1: Matriz de Leontief
@@ -138,6 +151,11 @@ server <- function(input, output,session) {
     i_mun_a <- base2[base2$codmun==codigom$codmun,72]
     efeito <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
 #    base2_uf$efeito <- efeito
+    
+    
+    
+    
+    mapa<- left_join(shp, base4, by = c('CD_MUN','codmun'))
     print(efeito)})
     
     #    observe(vals<-SetorProdutivo())
@@ -150,6 +168,17 @@ server <- function(input, output,session) {
     #    observe(valsmat$a <- Investimento() )
     #     Y = matrix(c(rep.int(0,(valsmat-1)),Investimento(),rep.int(0,(length(Setores)-valsmat))),nrow=length(Setores))
     
+    
+   output$map=renderLeaflet({
+       tm <- tm_shape(mapa) + 
+           tm_polygons("efeito", n = 4, palette = mycols) +
+           tm_compass(type = "8star", position = c("right", "top"), text.size = .5) +
+           tm_layout(frame = FALSE)+ 
+            tm_layout(title = "Mapa", title.size = 1 )
+        
+        
+        tmap_leaflet(tm)
+   } )
     
     output$map = renderLeaflet({
         leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%
