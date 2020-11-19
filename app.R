@@ -155,8 +155,10 @@ server <- function(input, output,session) {
     
     
     
-    mapa<- left_join(shp, base4, by = c('CD_MUN','codmun'))
+    #mapa<- left_join(shp, base4, by = c('CD_MUN','codmun'))
+    
     print(efeito)})
+    
     
     #    observe(vals<-SetorProdutivo())
     
@@ -169,16 +171,15 @@ server <- function(input, output,session) {
     #     Y = matrix(c(rep.int(0,(valsmat-1)),Investimento(),rep.int(0,(length(Setores)-valsmat))),nrow=length(Setores))
     
     
-   output$map=renderLeaflet({
-       tm <- tm_shape(mapa) + 
-           tm_polygons("efeito", n = 4, palette = mycols) +
-           tm_compass(type = "8star", position = c("right", "top"), text.size = .5) +
-           tm_layout(frame = FALSE)+ 
-            tm_layout(title = "Mapa", title.size = 1 )
+   #output$map=renderLeaflet({
+      #tm <- tm_shape(mapa) + 
+      #     tm_polygons("efeito", n = 4, palette = mycols) +
+      #     tm_compass(type = "8star", position = c("right", "top"), text.size = .5) +
+      #     tm_layout(frame = FALSE)+ 
+      #      tm_layout(title = "Mapa", title.size = 1 )
         
-        
-        tmap_leaflet(tm)
-   } )
+      #  tmap_leaflet(tm)
+      #   })
     
     output$map = renderLeaflet({
         leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%
