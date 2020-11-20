@@ -29,7 +29,7 @@ base1_mat <- data.matrix(base1[,-1]) # transformando Leontief em matriz
 setores <- colnames(base1[-1]) # vetor com o nome dos 67 setores
 setores
 length(setores) # quantidade de setores produtivos
-setor_escolhido <- 3 # usuario pode escolher de 1 a 67
+setor_escolhido <- 1 # usuario pode escolher de 1 a 67
 setor_escolhido
 aumento_demanda <- 30 # numero de unidades produzidas a mais no setor escolhido
 
@@ -57,7 +57,7 @@ library(stringr)
 
 
 # Primeiro: usuario devera selecionar a sigla da UF, em letras maiusculas
-uf <- "SP" # UF selecionada pelo usuario
+uf <- "AC" # UF selecionada pelo usuario
 
 
 
@@ -79,9 +79,8 @@ mun_selecionado <- municipios[563] # Municipio da UF selecionado pelo usuario
 # Municipio B: demais municipios afetados pelo aumento da demanda
 # O limite geografico do impacto sera a UF, dada a limitacao da base de dados das distancias
 
-codigo_mun_a <- base2_uf[base2_uf$municipios==mun_selecionado,71] # codigo do municipio A
-codigo_mun_a
-
+codigo_mun_a <- base2_uf[base2_uf$municipios==mun_selecionado, 71] # codigo do municipio A
+codigo_mun_a<-120001
 alpha <- 1 # parametro da equacao que pode, ou nao, ser definido: default = 1
 beta <- 1 # parametro da equacao que pode, ou nao, ser definido: default = 1
 

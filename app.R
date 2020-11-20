@@ -1,4 +1,4 @@
-setwd("C:/Documentos/Topicos")
+setwd("C:/Users/carlo/Documents/Faculdade/Topicos/Shinny-Topicos/Topicos")
 
 #install.packages("openxlsx")
 
@@ -50,7 +50,7 @@ base2<- base2 %>%  mutate(estado=case_when(uf=="AC"~"Acre", uf=="AL"~"Alagoas",
                                            uf=="TO"~"Tocantins ",
 ))
 
-
+summary(base2$uf)
 
 
 # Base 3: Distancias entre municipios
@@ -67,6 +67,7 @@ ui <- fluidPage(
         
         selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
                     choices = base1$Setores,selected = NULL),
+        
         
         selectInput(inputId = "UF",label = "Estado", 
                     choices = sort(unique(base2$estado)),selected = NULL),
@@ -147,21 +148,23 @@ server <- function(input, output,session) {
     codigom<- CODMUN() ## Porque ele imprime dois códigos?
     alpha <- 1
     beta <- 1
-    fator_1 <- base2_uf[,Setornum+1] ##Entender os cálculos (vetor coluna de dimensão 67x1)
-    fator_2 <- base3[base3$destino==codigom,3] ##Entender os cálculos 
-    i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
-#    fator_1 <- base2[base2$estado==input$UF,Setornum+1]### Verificar NA no final
-#    fator_2 <- base3[base3$destino==codigom$codmun,3]
-#    i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
-#    (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b))
-#    i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
+    #fator_1 <- base2_uf[,Setornum+1] ##Entender os cálculos (vetor coluna de dimensão 67x1)
+    #fator_2 <- base3[base3$destino==codigom,3] ##Entender os cálculos 
+    #i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
+  fator_1 <- base2_uf[,Setornum+1]### Verificar NA no final
+  fator_2 <- base3[base3$destino==codigom$codmun,3]
+  i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
+  #ifelse(length(i_mun_b)>1, (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b)), (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=0)))
+  #i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
 #    efeito <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
 #    base2_uf$efeito <- efeito
     
     #mapa<- left_join(shp, base4, by = c('CD_MUN','codmun'))
     
     print(fator_1)
-    print(fator_2)}) 
+    print(fator_2)
+    print(length(i_mun_b))
+    print(length(base2_uf$codigo))}) 
     
    #output$map=renderLeaflet({
       #tm <- tm_shape(mapa) + 
