@@ -88,13 +88,14 @@ beta <- 1 # parametro da equacao que pode, ou nao, ser definido: default = 1
 fator_1 <- base2_uf[,setor_escolhido+1]
 fator_2 <- base3[base3$destino==codigo_mun_a,3]
 i_mun_b = alpha*log(fator_1)+beta*log(fator_2) # calculo dos indices para cada municipio da UF escolhida
+i_mun_b
 base2_uf$indice <- i_mun_b # incluindo a coluna "indice" na Base 2_UF
 
 # Distribuindo o efeito para os municipios
 
 i_mun_a <- base2_uf[base2_uf$municipios==mun_selecionado,72]
 
-efeito <- (i_mun_b/sum(base2_uf$indice>0))*delta[setor_escolhido,]
+efeito <- (i_mun_b/(i_mun_a+sum(base2_uf$indice>0)))*delta[setor_escolhido,]
 efeito
 
 base2_uf$efeito <- efeito # incluindo a variavel "efeito" na Base 2_UF

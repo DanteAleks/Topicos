@@ -1,4 +1,4 @@
-setwd("C:/Users/carlo/Documents/Faculdade/Topicos/Shinny-Topicos/Topicos")
+setwd("C:/Documentos/Topicos")
 
 #install.packages("openxlsx")
 
@@ -11,13 +11,13 @@ require(rgdal)
 
 
 #Shape Municipios 2019
-shp<- readOGR("BR_Municipios_2019.shp")
+#shp<- readOGR("BR_Municipios_2019.shp")
 
-summary(shp)
+#summary(shp)
 
 #####Variavel para o Bind
-head(shp$CD_MUN,5)
-mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
+#head(shp$CD_MUN,5)
+#mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
 
 
 
@@ -69,7 +69,7 @@ ui <- fluidPage(
                     choices = base1$Setores,selected = NULL),
         
         selectInput(inputId = "UF",label = "Estado", 
-                    choices = unique(base2$estado),selected = NULL),
+                    choices = sort(unique(base2$estado)),selected = NULL),
         
         
         selectInput(inputId ="mun",label = "Municipio", 
@@ -134,6 +134,7 @@ server <- function(input, output,session) {
     
     
     vals <- reactiveValues()
+
     observe({vals<-SetorProdutivo()
     invest<-Investimento()
     Setornum<-as.numeric(vals$setnum)
@@ -142,34 +143,25 @@ server <- function(input, output,session) {
     Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
     X <- valsmat %*% Y 
     delta <- X-valsmat[,Setornum]
-    fator_1 <- base2[base2$estado==input$UF,Setornum+1]### Verificar NA no final
-    codigom<- CODMUN()
-    alpha <- 1 # parametro da equacao que pode, ou nao, ser definido: default = 1
+    base2_uf<- UF()
+    codigom<- CODMUN() ## Porque ele imprime dois códigos?
+    alpha <- 1
     beta <- 1
-    fator_2 <- base3[base3$destino==codigom$codmun,3]
-    i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) # calculo dos indices para cada municipio da UF escolhida
-    i_mun_a <- base2[base2$codmun==codigom$codmun,72]
-    efeito <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
+    fator_1 <- base2_uf[,Setornum+1] ##Entender os cálculos (vetor coluna de dimensão 67x1)
+    fator_2 <- base3[base3$destino==codigom,3] ##Entender os cálculos 
+    i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
+#    fator_1 <- base2[base2$estado==input$UF,Setornum+1]### Verificar NA no final
+#    fator_2 <- base3[base3$destino==codigom$codmun,3]
+#    i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
+#    (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b))
+#    i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
+#    efeito <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
 #    base2_uf$efeito <- efeito
-    
-    
-    
     
     #mapa<- left_join(shp, base4, by = c('CD_MUN','codmun'))
     
-    print(efeito)})
-    
-    
-    #    observe(vals<-SetorProdutivo())
-    
-    #    valsmat<- as.matrix(vals)
-    
-    #################################3parte a resolver ##############################
-    
-    
-    #    observe(valsmat$a <- Investimento() )
-    #     Y = matrix(c(rep.int(0,(valsmat-1)),Investimento(),rep.int(0,(length(Setores)-valsmat))),nrow=length(Setores))
-    
+    print(fator_1)
+    print(fator_2)}) 
     
    #output$map=renderLeaflet({
       #tm <- tm_shape(mapa) + 
