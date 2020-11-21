@@ -8,19 +8,18 @@ library(leaflet)
 library(openxlsx)
 library(tidyverse)
 require(rgdal)
+library(tmap)
 
 
 #Shape Municipios 2019
-#shp<- readOGR("BR_Municipios_2019.shp")
-
-#summary(shp)
+shp<- readOGR("BR_Municipios_2019.shp")
 
 #####Variavel para o Bind
-#head(shp$CD_MUN,5)
-#mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
+head(shp$CD_MUN,5)
+######Filter UF
+head(shp$SIGLA_UF)
 
-
-
+mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
 
 # Base 1: Matriz de Leontief
 base1 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
@@ -50,7 +49,6 @@ base2<- base2 %>%  mutate(estado=case_when(uf=="AC"~"Acre", uf=="AL"~"Alagoas",
                                            uf=="TO"~"Tocantins ",
 ))
 
-summary(base2$uf)
 
 
 # Base 3: Distancias entre municipios
@@ -122,17 +120,11 @@ server <- function(input, output,session) {
     
     SetorProdutivo = reactive({
         filter(base1,  Setores == input$setor_produtivo)
-        #        setornum <-as.numeric(base1$setnum)
     }) 
     
     CODMUN = reactive({
         filter( base2, NomeMun == input$mun) %>% select(codmun)
     })
-    
-#    observeEvent(CODMUN(), {
-#        codigomm <- base2$codmun
-#    })
-    
     
     vals <- reactiveValues()
 
@@ -145,26 +137,27 @@ server <- function(input, output,session) {
     X <- valsmat %*% Y 
     delta <- X-valsmat[,Setornum]
     base2_uf<- UF()
-    codigom<- CODMUN() ## Porque ele imprime dois códigos?
+    codigom<- CODMUN() 
     alpha <- 1
     beta <- 1
-    #fator_1 <- base2_uf[,Setornum+1] ##Entender os cálculos (vetor coluna de dimensão 67x1)
-    #fator_2 <- base3[base3$destino==codigom,3] ##Entender os cálculos 
-    #i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
+  
   fator_1 <- base2_uf[,Setornum+1]### Verificar NA no final
-  fator_2 <- base3[base3$destino==codigom$codmun,3]
+  fator_2 <- 1/base3[base3$destino==codigom$codmun,3]
   i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
-  #ifelse(length(i_mun_b)>1, (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b)), (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=0)))
-  #i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
-#    efeito <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
-#    base2_uf$efeito <- efeito
+  ifelse(length(i_mun_b)>47, (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b)), (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=0)))
+  i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
+  efeito1 <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
+  ifelse(length(efeito1)>48,(base2_uf<- base2_uf %>% mutate(efeito = efeito1)), base2_uf<- base2_uf %>% mutate(efeito = 0))
+  
+  ifelse(length(efeito1)>48,shp<-  filter(shp, SIGLA_UF ==input$UF), shp<-base2_uf)
+  ifelse(length(efeito1)>48, mapa<- left_join(shp, base2_uf, by = c('CD_MUN','codmun')), mapa<-shp)
+  
     
-    #mapa<- left_join(shp, base4, by = c('CD_MUN','codmun'))
-    
-    print(fator_1)
-    print(fator_2)
-    print(length(i_mun_b))
-    print(length(base2_uf$codigo))}) 
+    #print(fator_1)
+    print(i_mun_a)
+    print(length(efeito1))
+    print(summary(mapa))
+    }) 
     
    #output$map=renderLeaflet({
       #tm <- tm_shape(mapa) + 
@@ -185,8 +178,7 @@ server <- function(input, output,session) {
     # leaflet() %>%
     #   addTiles(
     #       urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-    #        attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-    #    ) %>%
+    # href="http://www.ma        attribution = 'Maps by <    #    ) %>%pbox.com/">Mapbox</a>'
     #        setView(lng = -52.4704, lat = -12.3829, zoom = 4)
     # })
     
