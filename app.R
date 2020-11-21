@@ -9,15 +9,19 @@ library(openxlsx)
 library(tidyverse)
 require(rgdal)
 library(tmap)
-
+library(sf)
 
 #Shape Municipios 2019
-shp<- readOGR("BR_Municipios_2019.shp")
+shp<- st_read("BR_Municipios_2019.shp", stringsAsFactors = FALSE)
 
 #####Variavel para o Bind
 head(shp$CD_MUN,5)
 ######Filter UF
 head(shp$SIGLA_UF)
+shp$CD_MUN<-substring(shp$CD_MUN, 1, 6)
+###testes
+#head(shp$CD_MUN,5)
+#head(base2$codmun,5)
 
 mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
 
@@ -50,10 +54,29 @@ base2<- base2 %>%  mutate(estado=case_when(uf=="AC"~"Acre", uf=="AL"~"Alagoas",
 ))
 
 
-
 # Base 3: Distancias entre municipios
 base3 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
 
+
+
+
+############tentando mapa
+
+maps<-0
+
+mapp1<-renderLeaflet({
+  tmap_mode("view")
+  tm <- tm_shape(mapa, name = "Maps") + 
+    tm_polygons("efeito", n = 4, palette = mycols)
+  tmap_leaflet(tm)
+})
+mapp2<-renderLeaflet(
+  leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) 
+)
+
+mapp<-mapp2
+
+##################
 
 ui <- fluidPage(
     
@@ -126,6 +149,8 @@ server <- function(input, output,session) {
         filter( base2, NomeMun == input$mun) %>% select(codmun)
     })
     
+    
+    
     vals <- reactiveValues()
 
     observe({vals<-SetorProdutivo()
@@ -144,34 +169,55 @@ server <- function(input, output,session) {
   fator_1 <- base2_uf[,Setornum+1]### Verificar NA no final
   fator_2 <- 1/base3[base3$destino==codigom$codmun,3]
   i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
+  
   ifelse(length(i_mun_b)>47, (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b)), (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=0)))
   i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
   efeito1 <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
-  ifelse(length(efeito1)>48,(base2_uf<- base2_uf %>% mutate(efeito = efeito1)), base2_uf<- base2_uf %>% mutate(efeito = 0))
+  ifelse(length(efeito1)>48,(base2_uf<- base2_uf %>% mutate(efeito = efeito1) %>% select(NomeMun, uf, codmun, efeito)), base2_uf<- base2_uf %>% mutate(efeito = 0))
+
   
-  ifelse(length(efeito1)>48,shp<-  filter(shp, SIGLA_UF ==input$UF), shp<-base2_uf)
-  ifelse(length(efeito1)>48, mapa<- left_join(shp, base2_uf, by = c('CD_MUN','codmun')), mapa<-shp)
   
-    
-    #print(fator_1)
+  ###################tentando mapa
+  ifelse(length(efeito1)>48, mapa <- merge(shp, base2_uf, by.x = "CD_MUN", by.y = "codmun", duplicateGeoms = TRUE), mapa<-base2_uf)
+  
+  if(length(i_mun_b)>48){maps<-1 
+  print("map1 SENDO ATUALIZADO")}else{maps<-2}
+  if(maps!=1){mapp=mapp2}else{mapp=mapp1}
+  
+  #print(fator_1)
     print(i_mun_a)
     print(length(efeito1))
-    print(summary(mapa))
+    print(maps)
     }) 
     
-   #output$map=renderLeaflet({
-      #tm <- tm_shape(mapa) + 
-      #     tm_polygons("efeito", n = 4, palette = mycols) +
-      #     tm_compass(type = "8star", position = c("right", "top"), text.size = .5) +
-      #     tm_layout(frame = FALSE)+ 
-      #      tm_layout(title = "Mapa", title.size = 1 )
-        
-      #  tmap_leaflet(tm)
-      #   })
     
-    output$map = renderLeaflet({
-        leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%
-            addProviderTiles(providers$OpenStreetMap) } )
+    
+    
+    
+    #############33COMO ATUALIZAR A FUNCAO MAPp?????????
+ 
+   output$map=mapp
+   
+   
+     
+     #renderLeaflet({
+      
+     #leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) 
+     
+      #tmap_mode("view")
+      #tm <- tm_shape(mapa, name = "map") + 
+     # tm_polygons("efeito",n = 6, palette = mycols)
+     # tmap_leaflet(tm)
+      
+    #})
+  
+      #observe({
+       # req(maps == "1")
+       # leafletProxy("map", data = mapa)
+      #})
+   #output$map =renderLeaflet(
+    #leafet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) 
+    #)
     
     
     #output$map <- renderLeaflet({
