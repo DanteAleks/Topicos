@@ -2,7 +2,6 @@ setwd("C:/Users/bruno/Desktop/5 Semestre/Tópicos/Aplicativo Final")
 
 #install.packages("openxlsx")
 
-
 library(shiny)
 library(leaflet)
 library(openxlsx)
@@ -61,14 +60,13 @@ base3 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
 
 
 ############tentando mapa
-
 maps<-0
 
 mapp1<-renderLeaflet({
     tmap_mode("view")
     tm <- tm_shape(mapa, name = "Maps") + 
         tm_polygons("efeito", n = 4, palette = mycols)
-    tmap_leaflet(tm)
+    tmap_leaflet(tm,mode="view",show=T)
 })
 mapp2<-renderLeaflet(
     leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) 
@@ -76,56 +74,38 @@ mapp2<-renderLeaflet(
 
 mapp<-mapp2
 
-##################
-
 ui <- fluidPage(
-    
-    #    sidebarLayout(
-    
-    #    sidebarPanel(
-    fluidRow(column(12, wellPanel(
-        numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=NULL,min=1),
-        
-        selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
-                    choices = base1$Setores,selected = NULL),
-        
-        
-        selectInput(inputId = "UF",label = "Estado", 
-                    choices = sort(unique(base2$estado)),selected = NULL),
-        
-        
-        selectInput(inputId ="mun",label = "Municipio", 
-                    choices = NULL)))),
-    #        ),
-    
-    #    mainPanel(
-    
-    titlePanel("Trabalho Topicos "),
     navbarPage("Emprego e Renda", position = 'static-top'),
     theme=shinythemes::shinytheme('cosmo'),
     fixedRow(
+        column(2, 
+               fluidRow(column(12, wellPanel(
+                   numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=NULL,min=1),
+                   selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
+                               choices = base1$Setores,selected = NULL),
+                   selectInput(inputId = "UF",label = "Estado", 
+                               choices = sort(unique(base2$estado)),selected = NULL),
+                   selectInput(inputId ="mun",label = "Municipio", 
+                               choices = NULL))))),
         column(6, 
                fluidRow(column(12, wellPanel(
-                   
-                   leafletOutput(outputId = "map",width=854, height = 480)))),
-               
+                   leafletOutput("map",height = 600)))),
                fluidRow(column(12,wellPanel(
                    textOutput('fonte')
                )))),
-        #    column(4,
-        # fluidRow(column(6,wellPanel(
-        #                 tableOutput('tabela'))),
-        #            column(6,wellPanel(
-        #                   tableOutput('tabela2')))),
-        #     fluidRow(column(12, wellPanel(
-        #textOutput('indicador')))
-        #))
+        column(4,
+               fluidRow(column(6,wellPanel(
+                   tableOutput('tabela'))),
+                   column(6,wellPanel(
+                       tableOutput('tabela2')))),
+               fluidRow(column(12, wellPanel(
+                   textOutput('indicador')))
+               )
+        )
     )
 )
-##))
 
 server <- function(input, output,session) {
-    
     
     
     UF = reactive({
@@ -176,7 +156,6 @@ server <- function(input, output,session) {
     ifelse(length(efeito1)>48,(base2_uf<- base2_uf %>% mutate(efeito = efeito1) %>% select(NomeMun, uf, codmun, efeito)), base2_uf<- base2_uf %>% mutate(efeito = 0))
     
     
-    
     ###################tentando mapa
     ifelse(length(efeito1)>48, mapa <- merge(shp, base2_uf, by.x = "CD_MUN", by.y = "codmun", duplicateGeoms = TRUE), mapa<-base2_uf)
     
@@ -188,7 +167,7 @@ server <- function(input, output,session) {
     print(i_mun_a)
     print(length(efeito1))
     print(maps)
-    }) 
+    })
     
     
     
@@ -201,14 +180,11 @@ server <- function(input, output,session) {
     
     
     #renderLeaflet({
-    
     #leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) 
-    
     #tmap_mode("view")
     #tm <- tm_shape(mapa, name = "map") + 
-    # tm_polygons("efeito",n = 6, palette = mycols)
-    # tmap_leaflet(tm)
-    
+    #tm_polygons("efeito",n = 6, palette = mycols)
+    #tmap_leaflet(tm)
     #})
     
     #observe({
