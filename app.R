@@ -1,4 +1,4 @@
-setwd("C:/Users/bruno/Desktop/5 Semestre/Tópicos/Aplicativo Final")
+setwd("C:/Users/carlo/Documents/Faculdade/Topicos/Shinny-Topicos/Topicos")
 
 #install.packages("openxlsx")
 
@@ -63,14 +63,31 @@ base3 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
 maps<-0
 
 mapp1<-renderLeaflet({
+    
+    validate(
+        need( maps == 1  ,"")
+    )
+    
+    
     tmap_mode("view")
     tm <- tm_shape(mapa, name = "Maps") + 
         tm_polygons("efeito", n = 4, palette = mycols)
     tmap_leaflet(tm,mode="view",show=T)
-})
+
+    
+    
+    
+    })
 mapp2<-renderLeaflet(
-    leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) 
-)
+    validate(
+      need( maps == 1  ,"")
+    ),
+    leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) ,
+    if(maps!=1){mapp=mapp2
+    print("teste")}else{mapp=mapp1}
+    
+    
+    )
 
 mapp<-mapp2
 
@@ -159,13 +176,14 @@ server <- function(input, output,session) {
     ###################tentando mapa
     ifelse(length(efeito1)>48, mapa <- merge(shp, base2_uf, by.x = "CD_MUN", by.y = "codmun", duplicateGeoms = TRUE), mapa<-base2_uf)
     
-    if(length(i_mun_b)>48){maps<-1 
-    print("map1 SENDO ATUALIZADO")}else{maps<-2}
-    if(maps!=1){mapp=mapp2}else{mapp=mapp1}
+    if(length(i_mun_b)>48){maps<-2 
+    print("map1 SENDO ATUALIZADO")}else{maps<-1}
+    if(maps>1){mapp=mapp1}else{mapp=mapp2}
     
     #print(fator_1)
     print(i_mun_a)
     print(length(efeito1))
+    print(mapa)
     print(maps)
     })
     
@@ -175,7 +193,29 @@ server <- function(input, output,session) {
     
     #############33COMO ATUALIZAR A FUNCAO MAPp?????????
     
-    output$map=mapp
+    output$map<-mapp
+    
+    
+ #   output$map<-renderLeaflet({
+        
+ #       validate(
+ #           need(maps>'1', 'Check at least one letter!'),
+  #         )
+ #       
+        
+        #validate(
+           # need( maps == "1"  ,"")
+       # )
+        
+  #      tmap_mode("view")
+ #       tm <- tm_shape(mapa, name = "Maps") + 
+  #          tm_polygons("efeito", n = 4, palette = mycols)
+  #      tmap_leaflet(tm,mode="view",show=T)
+        
+        
+        
+        
+   # })
     
     
     
