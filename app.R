@@ -75,19 +75,11 @@ mapp1<-renderLeaflet({
     tmap_leaflet(tm,mode="view",show=T)
 
     
-    
-    
     })
 mapp2<-renderLeaflet(
-    validate(
-      need( maps == 1  ,"")
-    ),
-    leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) ,
-    if(maps!=1){mapp=mapp2
-    print("teste")}else{mapp=mapp1}
-    
-    
-    )
+   
+   leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) ,
+        )
 
 mapp<-mapp2
 
@@ -164,6 +156,8 @@ server <- function(input, output,session) {
     beta <- 1
     
     fator_1 <- base2_uf[,Setornum+1]### Verificar NA no final
+    
+    ################seria origem?
     fator_2 <- 1/base3[base3$destino==codigom$codmun,3]
     i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
     
@@ -176,14 +170,14 @@ server <- function(input, output,session) {
     ###################tentando mapa
     ifelse(length(efeito1)>48, mapa <- merge(shp, base2_uf, by.x = "CD_MUN", by.y = "codmun", duplicateGeoms = TRUE), mapa<-base2_uf)
     
-    if(length(i_mun_b)>48){maps<-2 
-    print("map1 SENDO ATUALIZADO")}else{maps<-1}
-    if(maps>1){mapp=mapp1}else{mapp=mapp2}
+    #if(length(i_mun_b)>48){maps<-2 
+    #print("map1 SENDO ATUALIZADO")}else{maps<-1}
+    #if(maps>1){mapp=mapp1}else{mapp=mapp2}
     
     #print(fator_1)
     print(i_mun_a)
     print(length(efeito1))
-    print(mapa)
+    print(head(mapa,5))
     print(maps)
     })
     
@@ -195,26 +189,24 @@ server <- function(input, output,session) {
     
     output$map<-mapp
     
+    #geodata <- reactive({
+     # if(maps>1){mapp=mapp1}else{mapp=mapp2}
+      #})
     
- #   output$map<-renderLeaflet({
-        
- #       validate(
- #           need(maps>'1', 'Check at least one letter!'),
-  #         )
- #       
-        
-        #validate(
-           # need( maps == "1"  ,"")
-       # )
-        
-  #      tmap_mode("view")
- #       tm <- tm_shape(mapa, name = "Maps") + 
-  #          tm_polygons("efeito", n = 4, palette = mycols)
-  #      tmap_leaflet(tm,mode="view",show=T)
-        
-        
-        
-        
+    
+    
+    #output$map<-renderLeaflet({
+    
+    #validate(
+    #  need(geodata(),"")
+    #)
+    
+    
+    #tmap_mode("view")
+    #tm <- tm_shape(mapa, name = "Maps") + 
+    #  tm_polygons("efeito", n = 4, palette = mycols)
+    #tmap_leaflet(tm,mode="view",show=T)
+    
    # })
     
     
