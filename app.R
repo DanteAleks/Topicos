@@ -25,12 +25,12 @@ shp$CD_MUN<-substring(shp$CD_MUN, 1, 6)
 mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
 
 # Base 1: Matriz de Leontief
-base1 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
+base1 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
 base1$setnum<- c(1:67)
 #base1_mat <- data.matrix(base1[,-1])
 
 # Base 2: RAIS compilada IBGE
-base2 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=7)
+base2 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=7)
 
 base2$codmun<-substring(base2$`Municipio/Setores`, 1, 6)
 base2$uf<-substring(base2$`Municipio/Setores`, 8, 9)
@@ -54,7 +54,7 @@ base2<- base2 %>%  mutate(estado=case_when(uf=="AC"~"Acre", uf=="AL"~"Alagoas",
 
 
 # Base 3: Distancias entre municipios
-base3 <- read.xlsx("BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
+base3 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
 
 
 
