@@ -1,20 +1,19 @@
 ### Calculos para os resultados do topico Emprego e Renda ###
 
-install.packages("openxlsx")
-install.packages("dplyr")
-install.packages("stringr")
+#install.packages("openxlsx")
+#install.packages("tidyverse")
 
 ### Importando as bases de dados
 library(openxlsx)
 
 # Base 1: Matriz de Leontief
-base1 <- read.xlsx("/Users/gilson/Documents/GILSON/UNB/1-ESTATISTICA/1-2020-TOPICOS/BASES-DE-DADOS/2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
+base1 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
 
 # Base 2: RAIS compilada IBGE
-base2 <- read.xlsx("/Users/gilson/Documents/GILSON/UNB/1-ESTATISTICA/1-2020-TOPICOS/BASES-DE-DADOS/2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=7)
+base2 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=7)
 
 # Base 3: Distancias entre municipios
-base3 <- read.xlsx("/Users/gilson/Documents/GILSON/UNB/1-ESTATISTICA/1-2020-TOPICOS/BASES-DE-DADOS/2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
+base3 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
 
 # Calcular a equacao matricial: X=B*Y
 # X = vetor producao
@@ -28,8 +27,8 @@ base1_mat <- data.matrix(base1[,-1]) # transformando Leontief em matriz
 
 setores <- colnames(base1[-1]) # Vetor com o nome dos 67 setores
 length(setores) # Quantidade de setores produtivos
-setor_escolhido <- 15 # Usuario pode escolher de 1 a 67 (exemplo: 15)
-aumento_demanda <- 300 # Numero de unidades produzidas a mais no setor escolhido (exemplo: 300)
+setor_escolhido <- 2 # Usuario pode escolher de 1 a 67 (exemplo: 15)
+aumento_demanda <- 100 # Numero de unidades produzidas a mais no setor escolhido (exemplo: 300)
 
 # Vetor coluna: demanda final
 Y = matrix(c(rep.int(0,(setor_escolhido-1)),aumento_demanda,rep.int(0,(length(setores)-setor_escolhido))),nrow=length(setores))
@@ -40,9 +39,6 @@ X = base1_mat %*% Y # Calculo do vetor producao para o aumento da demanda (Y)
 delta <- X-base1_mat[,setor_escolhido] # variacao do vetor producao: final (X) menos inicial (Leontief)
 
 # Selecao do municipio
-
-library(dplyr)
-library(stringr)
 
 # Primeiro: usuario devera selecionar a sigla da UF, em letras maiusculas
 uf <- "RO" # UF selecionada pelo usuario (exemplo: Rondonia - RO)
@@ -99,10 +95,27 @@ base_final <- merge(base2,base3_origem,by="codigo_mun_b", all=FALSE)
 # Distribuindo o efeito para os municipios
 
 indice_a <- alpha*log(fator_1)
+
 efeito <- (indice/(indice_a+indice))*delta[setor_escolhido,]
 base_final$efeito <- efeito
 
 print(efeito)
+
+basemap5 <- base_final %>% select(codigo_mun_b, mun_destino, uf_destino, distancia, efeito) %>% 
+  rename("Codigo Municipio de Destino" = "codigo_mun_b", "Municipio de destino" = "mun_destino", "UF de destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
+
+head(basemap5$`Codigo Municipio de Destino`,4)
+head(shp$CD_MUN,4)
+
+mapa4 <- merge(shp, basemap5, by.x = "CD_MUN", by.y = "Codigo Municipio de Destino", duplicateGeoms = TRUE)
+
+mapa5<- filter(mapa4, SIGLA_UF == "AC")
+
+
+tmap_mode("view")
+tm_shape(mapa5)+
+  tm_polygons("Efeito do Investimento",n = 7, palette = mycols) 
+
 
 # CONCLUSAO: Agora é plotar no mapa os valores dos efeitos nos municipios correspondentes
 

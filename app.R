@@ -19,13 +19,13 @@ head(shp$CD_MUN,5)
 head(shp$SIGLA_UF)
 shp$CD_MUN<-substring(shp$CD_MUN, 1, 6)
 ###testes
-#head(shp$CD_MUN,5)
-#head(base2$codmun,5)
+head(shp$CD_MUN,5)
 
 mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
 
 # Base 1: Matriz de Leontief
 base1 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
+base1_mat <- data.matrix(base1[,-1])
 base1$setnum<- c(1:67)
 #base1_mat <- data.matrix(base1[,-1])
 
@@ -51,37 +51,17 @@ base2<- base2 %>%  mutate(estado=case_when(uf=="AC"~"Acre", uf=="AL"~"Alagoas",
                                            uf=="SP"~"São Paulo", uf=="SE"~"Sergipe",
                                            uf=="TO"~"Tocantins ",
 ))
-
+base2_uf<- base2 %>% filter(uf == "RO")
 
 # Base 3: Distancias entre municipios
 base3 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
+base3$uf_origem <- str_sub(base3$origem_uf_mun,1,2) # Insere coluna com a UF da origem
+base3$mun_origem <- str_sub(base3$origem_uf_mun,4) # Insere coluna com o nome do municipio da origem
+base3$uf_destino <- str_sub(base3$destino_uf_mun,1,2) # Insere coluna com a UF do destino
+base3$mun_destino <- str_sub(base3$destino_uf_mun,4)
+base3$distancia <- base3$distancia/1000
 
 
-
-
-############tentando mapa
-maps<-0
-
-mapp1<-renderLeaflet({
-    
-    validate(
-        need( maps == 1  ,"")
-    )
-    
-    
-    tmap_mode("view")
-    tm <- tm_shape(mapa, name = "Maps") + 
-        tm_polygons("efeito", n = 4, palette = mycols)
-    tmap_leaflet(tm,mode="view",show=T)
-
-    
-    })
-mapp2<-renderLeaflet(
-   
-   leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) ,
-        )
-
-mapp<-mapp2
 
 ui <- fluidPage(
     navbarPage("Emprego e Renda", position = 'static-top'),
@@ -89,13 +69,13 @@ ui <- fluidPage(
     fixedRow(
         column(2, 
                fluidRow(column(12, wellPanel(
-                   numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=NULL,min=1),
+                   numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=1,min=1),
                    selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
                                choices = base1$Setores,selected = NULL),
-                   selectInput(inputId = "UF",label = "Estado", 
-                               choices = sort(unique(base2$estado)),selected = NULL),
+                   #selectInput(inputId = "UF",label = "Estado", 
+                               #choices = sort(unique(base2$estado)),selected = NULL),
                    selectInput(inputId ="mun",label = "Municipio", 
-                               choices = NULL))))),
+                               choices = sort(unique(base2_uf$NomeMun))))))),
         column(6, 
                fluidRow(column(12, wellPanel(
                    leafletOutput("map",height = 600)))),
@@ -117,14 +97,14 @@ ui <- fluidPage(
 server <- function(input, output,session) {
     
     
-    UF = reactive({
-        filter(base2, estado == input$UF)
-    }) 
+    #UF = reactive({
+       # filter(base2, estado == input$UF)
+   # }) 
     
-    observeEvent(UF(), {
-        choices <- unique(UF()$NomeMun)
-        updateSelectInput(session, "mun", choices = choices) 
-    })
+    #observeEvent(UF(), {
+       # choices <- unique(UF()$NomeMun)
+        #updateSelectInput(session, "mun", choices = choices) 
+   # })
     
     Investimento = reactive({
         input$investimento
@@ -135,51 +115,84 @@ server <- function(input, output,session) {
     }) 
     
     CODMUN = reactive({
-        filter( base2, NomeMun == input$mun) %>% select(codmun)
+        filter( base2_uf, NomeMun == input$mun) %>% select(codmun)
     })
     
     
     
     vals <- reactiveValues()
     
-    observe({vals<-SetorProdutivo()
-    invest<-Investimento()
-    Setornum<-as.numeric(vals$setnum)
+    observe({ 
+    
+    vals1<-SetorProdutivo()
+    invest<-Investimento() 
+    
+    Setornum<-as.numeric(vals1$setnum)
+    
     vals<- select(base1,-c(setnum,Setores))
     valsmat<- data.matrix(vals)
+        
+        
+        
     Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
     X <- valsmat %*% Y 
     delta <- X-valsmat[,Setornum]
-    base2_uf<- UF()
+    
+    
     codigom<- CODMUN() 
     alpha <- 1
     beta <- 1
     
-    fator_1 <- base2_uf[,Setornum+1]### Verificar NA no final
+    fator_1 <- sum(base2[,Setornum+1])### ok
+    
+    
+    
+    codigo_mun_b <- base3[base3$origem==codigom$codmun,2]
+    distancia_a_b <- base3[base3$origem==codigom$codmun,3]
+    
+    indice <- alpha*log(fator_1)+beta*log(1/distancia_a_b)
+    
+    base3_origem <- subset(base3,base3$origem==codigom$codmun)
+    base3_origem$indice <- indice ### ok
+    
+    
+    base_final <- merge(base2,base3_origem,by.x="codmun", by.y = "origem", all=FALSE)
+    
+    indice_a <- alpha*log(fator_1)
+    efeito <- (indice/(indice_a+indice))*delta[Setornum,]
+    base_final$efeito <- efeito ###ok
+    
+    basemap <- base_final %>% select(destino, mun_destino, uf_destino, distancia, efeito) %>% 
+      rename("Codigo Municipio de Destino" = "destino", "Municipio de destino" = "mun_destino", "UF de destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
+    mapa <- merge(shp, basemap, by.x = "CD_MUN", by.y = "Codigo Municipio de Destino", duplicateGeoms = TRUE)
+    
+    
+   # print(head(base3_origem$indice,4))
     
     ################seria origem?
-    fator_2 <- 1/base3[base3$destino==codigom$codmun,3]
-    i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
+    #fator_2 <- 1/base3[base3$destino==codigom$codmun,3]
+    #i_mun_b <- alpha*log(fator_1)+beta*log(fator_2) 
     
-    ifelse(length(i_mun_b)>47, (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b)), (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=0)))
-    i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
-    efeito1 <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
-    ifelse(length(efeito1)>48,(base2_uf<- base2_uf %>% mutate(efeito = efeito1) %>% select(NomeMun, uf, codmun, efeito)), base2_uf<- base2_uf %>% mutate(efeito = 0))
+    #ifelse(length(i_mun_b)>47, (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=i_mun_b)), (base2_uf<- base2 %>% filter(base2$estado==input$UF)%>%mutate(indice=0)))
+    #i_mun_a <- base2_uf[base2_uf$codmun==codigom$codmun,73]
+    #efeito1 <- (i_mun_b/(i_mun_a+sum(i_mun_b>0)))*delta[Setornum,]
+    ####colocar dist
+    #ifelse(length(efeito1)>48,(base2_uf<- base2_uf %>% mutate(efeito = efeito1) %>% select(NomeMun, uf, codmun, efeito)), base2_uf<- base2_uf %>% mutate(efeito = 0))
     
     
     ###################tentando mapa
-    ifelse(length(efeito1)>48, mapa <- merge(shp, base2_uf, by.x = "CD_MUN", by.y = "codmun", duplicateGeoms = TRUE), mapa<-base2_uf)
+    #ifelse(length(efeito1)>48, mapa <- merge(shp, base2_uf, by.x = "CD_MUN", by.y = "codmun", duplicateGeoms = TRUE), mapa<-base2_uf)
     
     #if(length(i_mun_b)>48){maps<-2 
     #print("map1 SENDO ATUALIZADO")}else{maps<-1}
     #if(maps>1){mapp=mapp1}else{mapp=mapp2}
     
     #print(fator_1)
-    print(i_mun_a)
-    print(length(efeito1))
-    print(head(mapa,5))
-    print(maps)
+    
+    
+    #
     })
+    #mapa1<- reactive(mapa,print("deu"))
     
     
     
@@ -187,7 +200,13 @@ server <- function(input, output,session) {
     
     #############33COMO ATUALIZAR A FUNCAO MAPp?????????
     
-    output$map<-mapp
+    output$map<-renderLeaflet({
+     
+      tmap_mode("view")
+        tm <- tm_shape(mapa) + 
+        tm_polygons("Efeito do Investimento",n = 7, palette = mycols)
+        tmap_leaflet(tm) 
+        })
     
     #geodata <- reactive({
      # if(maps>1){mapp=mapp1}else{mapp=mapp2}
@@ -211,13 +230,12 @@ server <- function(input, output,session) {
     
     
     
-    #renderLeaflet({
-    #leaflet() %>% setView(lng = -53, lat = -11, zoom = 5) %>%  addProviderTiles(providers$OpenStreetMap) 
+    
     #tmap_mode("view")
     #tm <- tm_shape(mapa, name = "map") + 
     #tm_polygons("efeito",n = 6, palette = mycols)
     #tmap_leaflet(tm)
-    #})
+    #
     
     #observe({
     # req(maps == "1")
@@ -255,6 +273,5 @@ server <- function(input, output,session) {
         "IndicaÃ§Ã£o das bases de dados utilizadas com as respectivas fontes."
     })
 }
-### Teste edição
-# Run the application 
+
 shinyApp(ui = ui, server = server)
