@@ -14,6 +14,9 @@ base2 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=7)
 
 # Base 3: Distancias entre municipios
 base3 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=8)
+shp<- st_read("BR_Municipios_2019.shp", stringsAsFactors = FALSE)
+shp$CD_MUN<-substring(shp$CD_MUN, 1, 6)
+mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
 
 # Calcular a equacao matricial: X=B*Y
 # X = vetor producao
@@ -102,15 +105,19 @@ base_final$efeito <- efeito
 print(efeito)
 
 basemap5 <- base_final %>% select(codigo_mun_b, mun_destino, uf_destino, distancia, efeito) %>% 
-  rename("Codigo Municipio de Destino" = "codigo_mun_b", "Municipio de destino" = "mun_destino", "UF de destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
+  rename("Codigo Municipio de Destino" = "codigo_mun_b", "Municipio de Destino" = "mun_destino", "UF de Destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
 
 head(basemap5$`Codigo Municipio de Destino`,4)
 head(shp$CD_MUN,4)
+
 
 mapa4 <- merge(shp, basemap5, by.x = "CD_MUN", by.y = "Codigo Municipio de Destino", duplicateGeoms = TRUE)
 
 mapa5<- filter(mapa4, SIGLA_UF == "AC")
 
+tab<- basemap5 %>% arrange(desc(efeito)) 
+tab<-head(tab, 10) %>% select("Municipio de Destino", "UF de Destino", "Efeito do Investimento")
+tab
 
 tmap_mode("view")
 tm_shape(mapa5)+
@@ -119,6 +126,16 @@ tm_shape(mapa5)+
 
 # CONCLUSAO: Agora é plotar no mapa os valores dos efeitos nos municipios correspondentes
 
+install.packages("mapdeck")
+library(mapdeck)
+set_token(Sys.getenv("MAPBOX"))
+crash_data = read.csv("https://git.io/geocompr-mapdeck")
 
+crash_data = na.omit(crash_data)
+ms = mapdeck_style("dark")
+mapdeck(style = ms, pitch = 45, location = c(0, 52), zoom = 4) %>%
+  add_grid(data = crash_data, lat = "lat", lon = "lng", cell_size = 1000,
+           elevation_scale = 50, layer_id = "grid_layer",
+           colour_range = viridisLite::plasma(6))
 
 

@@ -78,16 +78,16 @@ ui <- fluidPage(
              selectInput(inputId = "UF",label = "Estado do Efeito a Calcular", 
                          choices = sort(unique(base2$estado)),selected = NULL),
              )))),
-    column(6, 
+    column(4, 
            fluidRow(column(12, wellPanel(
              leafletOutput("map",height = 600)))),
            fluidRow(column(12,wellPanel(
              textOutput('fonte')
            )))),
-    column(4,
-           fluidRow(column(6,wellPanel(
+    column(6,
+           fluidRow(column(7,wellPanel(
              tableOutput('tabela'))),
-             column(6,wellPanel(
+             column(5,wellPanel(
                tableOutput('tabela2')))),
            fluidRow(column(12, wellPanel(
              textOutput('indicador')))
@@ -157,13 +157,16 @@ server <- function(input, output,session) {
       efeito <- (indice/(indice_a+indice))*delta[Setornum,]
       base_final$efeito <- efeito 
       
-      basemap <- base_final %>% select(destino, mun_destino, estado, distancia, efeito) %>% 
-        rename("Codigo Municipio de Destino" = "destino", "Municipio de destino" = "mun_destino", "UF de destino" = "estado", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
-     
+      basemap <- base_final %>% select(destino, mun_destino, uf_destino, distancia, efeito) %>% 
+        rename("Codigo Municipio de Destino" = "destino", "Municipio de Destino" = "mun_destino", "UF de Destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
+      
        mapa <- merge(shp, basemap, by.x = "CD_MUN", by.y = "Codigo Municipio de Destino", duplicateGeoms = TRUE)
+       
        lol<-head(UF(),1)
        mapa1<- filter(mapa, SIGLA_UF == lol$uf)
        
+       print(head(base_final,2))
+       print(head(basemap,2))
      
     tmap_mode("view")
     
@@ -174,21 +177,105 @@ server <- function(input, output,session) {
   })
   
   
-  name <- c("Brasil","Argentina","Venezuela","Alemanha","Inglaterra","China","JapÃ£o","Australia","Russia","Canada")
-  posi <- c(1,2,3,4,5,6,7,8,9,10)
-  tab <- data.frame(name,posi)
+  
   output$tabela <- renderTable({
+    
+    vals1<-SetorProdutivo()
+    invest<-Investimento() 
+    
+    Setornum<-as.numeric(vals1$setnum)
+    
+    vals<- select(base1,-c(setnum,Setores))
+    valsmat<- data.matrix(vals)
+    
+    Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
+    X <- valsmat %*% Y 
+    delta <- X-valsmat[,Setornum]
+    
+    
+    codigom<- CODMUN() 
+    alpha <- 1
+    beta <- 1
+    
+    fator_1 <- sum(base2[,Setornum+1])
+    
+    codigo_mun_b <- base3[base3$origem==codigom$codmun,2]
+    distancia_a_b <- base3[base3$origem==codigom$codmun,3]
+    
+    indice <- alpha*log(fator_1)+beta*log(1/distancia_a_b)
+    
+    base3_origem <- subset(base3,base3$origem==codigom$codmun)
+    base3_origem$indice <- indice 
+    
+    
+    base_final <- merge(base2,base3_origem,by.x="codmun", by.y = "origem", all=FALSE)
+    
+    indice_a <- alpha*log(fator_1)
+    efeito <- (indice/(indice_a+indice))*delta[Setornum,]
+    base_final$efeito <- efeito 
+    
+    basemap <- base_final %>% select(destino, mun_destino, uf_destino, distancia, efeito) %>% 
+      rename("Codigo Municipio de Destino" = "destino", "Municipio de Destino" = "mun_destino", "UF de Destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
+    
+    tab<- basemap %>% arrange(desc(efeito)) 
+    tab<-head(tab, 10) %>% select("Municipio de Destino", "UF de Destino", "Efeito do Investimento")
     tab
+    
+    
   })
   output$tabela2<- renderTable({
-    tab
-  })
+  
+    vals1<-SetorProdutivo()
+    invest<-Investimento() 
+    
+    Setornum<-as.numeric(vals1$setnum)
+    
+    vals<- select(base1,-c(setnum,Setores))
+    valsmat<- data.matrix(vals)
+    
+    Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
+    X <- valsmat %*% Y 
+    delta <- X-valsmat[,Setornum]
+    
+    
+    codigom<- CODMUN() 
+    alpha <- 1
+    beta <- 1
+    
+    fator_1 <- sum(base2[,Setornum+1])
+    
+    codigo_mun_b <- base3[base3$origem==codigom$codmun,2]
+    distancia_a_b <- base3[base3$origem==codigom$codmun,3]
+    
+    indice <- alpha*log(fator_1)+beta*log(1/distancia_a_b)
+    
+    base3_origem <- subset(base3,base3$origem==codigom$codmun)
+    base3_origem$indice <- indice 
+    
+    
+    base_final <- merge(base2,base3_origem,by.x="codmun", by.y = "origem", all=FALSE)
+    
+    indice_a <- alpha*log(fator_1)
+    efeito <- (indice/(indice_a+indice))*delta[Setornum,]
+    base_final$efeito <- efeito 
+    
+    basemap <- base_final %>% select(destino, mun_destino, uf_destino, distancia, efeito) %>% 
+      rename("Codigo Municipio de Destino" = "destino", "Municipio de Destino" = "mun_destino", "UF de Destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
+    
+    
+    tab2<- basemap %>% arrange(efeito)
+    tab2<-head(tab2, 10) %>% select("Municipio de Destino", "UF de Destino", "Efeito do Investimento")
+    tab2
+    
+    
+    })
   output$indicador <- renderText({
-    "Indicador sobre o impacto do setor que recebeu o investimento em cadeias produtivas anteriores ou posteriores."
+    "Feito para a materia Topicos Estatisticos pelos Alunos : Bruno, Carlo, Fabiana, Gilson, Rafael "
   })
   output$fonte <- renderText({
-    "IndicaÃ§Ã£o das bases de dados utilizadas com as respectivas fontes."
+    "Indicacao das bases de dados utilizadas com as respectivas fontes."
   })
 }
+
 
 shinyApp(ui = ui, server = server)
