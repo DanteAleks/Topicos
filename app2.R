@@ -270,14 +270,15 @@ server <- function(input, output,session) {
     
   })
   output$indicador <- renderText({
-    "Este aplicativo tem como objetivo representar o impacto que, dado um investimento em um certo setor
-    produtivo e município do estado de Rondônia, este investimento terá em outros setores e municípios do 
-    Brasil, As tabelas apresentam os municípios mais impactados, assim como os de menor impacto. O gráfico
-    representa por cores o valor desses impactos em cada estado.
-    Feito para a materia Topicos Estatisticos pelos Alunos : Bruno, Carlo, Fabiana, Gilson, Rafael "
+    "Trabalho da disciplina de Tópicos em Estatística 1.
+     Este aplicativo é um projeto da equipe de emprego e renda da disciplina de tópicos estatísticos da UnB e tem como objetivo representar o impacto que um investimento feito em um determinado setor
+     produtivo em um município do estado de Rondônia terá em outros setores e municípios do Brasil. A tabela à esquerda apresenta os municípios mais impactados pelo investimento, enquanto a tabela à direita
+     apresenta os menos impactados. O gráfico representa por cores o valor desses impactos em cada município por estado escolhido.
+     O grupo da disciplina é composto por Gilson Daniel, Bruno Brandão, Fabiana Mariquito, Carlo Aleksandr e Rafael Morum
+"
   })
   output$fonte <- renderText({
-    "Indicacao das bases de dados utilizadas com as respectivas fontes."
+    "Fontes para tabelas e mapas: IBGE; Ministério da Economia - Secretaria do Trabalho; Nomination; Google Maps; Open Street Map; Geofabrik"
   })
 }
 
