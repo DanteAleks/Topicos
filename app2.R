@@ -9,9 +9,6 @@ library(tidyverse)
 require(rgdal)
 require(tmap)
 require(sf)
-library(shinyWidgets)
-library(DT)
-library(shinythemes)
 
 #Shape Municipios 2019
 shp<- st_read("BR_Municipios_2019.shp", stringsAsFactors = FALSE)
@@ -66,40 +63,37 @@ base3$distancia <- base3$distancia/1000
 
 
 
-ui <- fluidPage(setBackgroundColor("#155675"),
-                tags$img(src = "https://upload.wikimedia.org/wikipedia/commons/d/d0/S%C3%ADmbolo_da_UnB.png",
-                         width = "200px", height = "100px",
-                         style = "position:absolute;left:3em ;top:43em"),
-                navbarPage("Emprego e Renda - RondÃ´nia", position = 'static-top'),
-                theme=shinythemes::shinytheme('cerulean'),
-                fixedRow(
-                  column(2, 
-                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50",
-                                                       numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=100,min=100),
-                                                       selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
-                                                                   choices = base1$Setores,selected = NULL),
-                                                       
-                                                       selectInput(inputId ="mun",label = "Municipio", 
-                                                                   choices = sort(unique(base2_uf$NomeMun))),
-                                                       selectInput(inputId = "UF",label = "Estado do Efeito a Calcular", 
-                                                                   choices = sort(unique(base2$estado)),selected = NULL),
-                         )))),
-                  column(4, 
-                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50;;height:45.5em",
-                                                       leafletOutput("map",height = 600)))),
-                         fluidRow(column(12,wellPanel(
-                           textOutput('fonte')
-                         )))),
-                  column(6,
-                         fluidRow(column(6,wellPanel(style = "background-color: #fff; border-color: #2c3e50;height:45.5em",
-                                                     tableOutput('tabela'))),
-                                  column(6,wellPanel(style = "background-color: #fff; border-color: #2c3e50;height:45.5em",
-                                                     tableOutput('tabela2')))),
-                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50",
-                                                       textOutput('indicador')))
-                         )
-                  )
-                )
+ui <- fluidPage(
+  navbarPage("Emprego e Renda", position = 'static-top'),
+  theme=shinythemes::shinytheme('cosmo'),
+  fixedRow(
+    column(2, 
+           fluidRow(column(12, wellPanel(
+             numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=100,min=100),
+             selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
+                         choices = base1$Setores,selected = NULL),
+             
+             selectInput(inputId ="mun",label = "Municipio", 
+                         choices = sort(unique(base2_uf$NomeMun))),
+             selectInput(inputId = "UF",label = "Estado do Efeito a Calcular", 
+                         choices = sort(unique(base2$estado)),selected = NULL),
+           )))),
+    column(4, 
+           fluidRow(column(12, wellPanel(
+             leafletOutput("map",height = 600)))),
+           fluidRow(column(12,wellPanel(
+             textOutput('fonte')
+           )))),
+    column(6,
+           fluidRow(column(7,wellPanel(
+             tableOutput('tabela'))),
+             column(5,wellPanel(
+               tableOutput('tabela2')))),
+           fluidRow(column(12, wellPanel(
+             textOutput('indicador')))
+           )
+    )
+  )
 )
 
 server <- function(input, output,session) {
@@ -177,7 +171,7 @@ server <- function(input, output,session) {
     tmap_mode("view")
     
     tm <- tm_shape(mapa1) + 
-      tm_polygons("Efeito do Investimento",n = 7, palette = 'Blues', title = "Efeito do Investimento:", popup.vars= c("Municipio de Destino", "UF de Destino", "Distancia entre Municipio", "Efeito do Investimento") )
+      tm_polygons("Efeito do Investimento",n = 7, palette = mycols, title = "Efeito do Investimento:")
     tmap_leaflet(tm) 
     
   })
@@ -276,7 +270,11 @@ server <- function(input, output,session) {
     
   })
   output$indicador <- renderText({
-    "Feito para a materia Topicos Estatisticos pelos Alunos : Bruno, Carlo, Fabiana, Gilson, Rafael "
+    "Este aplicativo tem como objetivo representar o impacto que, dado um investimento em um certo setor
+    produtivo e município do estado de Rondônia, este investimento terá em outros setores e municípios do 
+    Brasil, As tabelas apresentam os municípios mais impactados, assim como os de menor impacto. O gráfico
+    representa por cores o valor desses impactos em cada estado.
+    Feito para a materia Topicos Estatisticos pelos Alunos : Bruno, Carlo, Fabiana, Gilson, Rafael "
   })
   output$fonte <- renderText({
     "Indicacao das bases de dados utilizadas com as respectivas fontes."
