@@ -9,6 +9,9 @@ library(tidyverse)
 require(rgdal)
 require(tmap)
 require(sf)
+library(shinyWidgets)
+library(DT)
+library(shinythemes)
 
 #Shape Municipios 2019
 shp<- st_read("BR_Municipios_2019.shp", stringsAsFactors = FALSE)
@@ -63,37 +66,40 @@ base3$distancia <- base3$distancia/1000
 
 
 
-ui <- fluidPage(
-  navbarPage("Emprego e Renda", position = 'static-top'),
-  theme=shinythemes::shinytheme('cosmo'),
-  fixedRow(
-    column(2, 
-           fluidRow(column(12, wellPanel(
-             numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=100,min=100),
-             selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
-                         choices = base1$Setores,selected = NULL),
-             
-             selectInput(inputId ="mun",label = "Municipio", 
-                         choices = sort(unique(base2_uf$NomeMun))),
-             selectInput(inputId = "UF",label = "Estado do Efeito a Calcular", 
-                         choices = sort(unique(base2$estado)),selected = NULL),
-             )))),
-    column(4, 
-           fluidRow(column(12, wellPanel(
-             leafletOutput("map",height = 600)))),
-           fluidRow(column(12,wellPanel(
-             textOutput('fonte')
-           )))),
-    column(6,
-           fluidRow(column(7,wellPanel(
-             tableOutput('tabela'))),
-             column(5,wellPanel(
-               tableOutput('tabela2')))),
-           fluidRow(column(12, wellPanel(
-             textOutput('indicador')))
-           )
-    )
-  )
+ui <- fluidPage(setBackgroundColor("#155675"),
+                tags$img(src = "https://upload.wikimedia.org/wikipedia/commons/d/d0/S%C3%ADmbolo_da_UnB.png",
+                         width = "200px", height = "100px",
+                         style = "position:absolute;left:3em ;top:43em"),
+                navbarPage("Emprego e Renda - Rondônia", position = 'static-top'),
+                theme=shinythemes::shinytheme('cerulean'),
+                fixedRow(
+                  column(2, 
+                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50",
+                                                       numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=100,min=100),
+                                                       selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
+                                                                   choices = base1$Setores,selected = NULL),
+                                                       
+                                                       selectInput(inputId ="mun",label = "Municipio", 
+                                                                   choices = sort(unique(base2_uf$NomeMun))),
+                                                       selectInput(inputId = "UF",label = "Estado do Efeito a Calcular", 
+                                                                   choices = sort(unique(base2$estado)),selected = NULL),
+                         )))),
+                  column(4, 
+                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50;;height:45.5em",
+                                                       leafletOutput("map",height = 600)))),
+                         fluidRow(column(12,wellPanel(
+                           textOutput('fonte')
+                         )))),
+                  column(6,
+                         fluidRow(column(6,wellPanel(style = "background-color: #fff; border-color: #2c3e50;height:45.5em",
+                                                     tableOutput('tabela'))),
+                                  column(6,wellPanel(style = "background-color: #fff; border-color: #2c3e50;height:45.5em",
+                                                     tableOutput('tabela2')))),
+                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50",
+                                                       textOutput('indicador')))
+                         )
+                  )
+                )
 )
 
 server <- function(input, output,session) {
@@ -101,7 +107,7 @@ server <- function(input, output,session) {
   UF = reactive({
     filter( base2, estado == input$UF) %>% select(uf)
   })
- 
+  
   Investimento = reactive({
     input$investimento
   }) 
@@ -115,63 +121,63 @@ server <- function(input, output,session) {
   })
   
   
-
+  
   output$map<-renderLeaflet({
     
-      
-      vals1<-SetorProdutivo()
-      invest<-Investimento() 
-      
-      Setornum<-as.numeric(vals1$setnum)
-      
-      vals<- select(base1,-c(setnum,Setores))
-      valsmat<- data.matrix(vals)
-      
-      
-      
-      Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
-      X <- valsmat %*% Y 
-      delta <- X-valsmat[,Setornum]
-      
-      
-      codigom<- CODMUN() 
-      alpha <- 1
-      beta <- 1
-      
-      fator_1 <- sum(base2[,Setornum+1])
-      
-      
-      
-      codigo_mun_b <- base3[base3$origem==codigom$codmun,2]
-      distancia_a_b <- base3[base3$origem==codigom$codmun,3]
-      
-      indice <- alpha*log(fator_1)+beta*log(1/distancia_a_b)
-      
-      base3_origem <- subset(base3,base3$origem==codigom$codmun)
-      base3_origem$indice <- indice 
-      
-      
-      base_final <- merge(base2,base3_origem,by.x="codmun", by.y = "origem", all=FALSE)
-      
-      indice_a <- alpha*log(fator_1)
-      efeito <- (indice/(indice_a+indice))*delta[Setornum,]
-      base_final$efeito <- efeito 
-      
-      basemap <- base_final %>% select(destino, mun_destino, uf_destino, distancia, efeito) %>% 
-        rename("Codigo Municipio de Destino" = "destino", "Municipio de Destino" = "mun_destino", "UF de Destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
-      
-       mapa <- merge(shp, basemap, by.x = "CD_MUN", by.y = "Codigo Municipio de Destino", duplicateGeoms = TRUE)
-       
-       lol<-head(UF(),1)
-       mapa1<- filter(mapa, SIGLA_UF == lol$uf)
-       
-       print(head(base_final,2))
-       print(head(basemap,2))
-     
+    
+    vals1<-SetorProdutivo()
+    invest<-Investimento() 
+    
+    Setornum<-as.numeric(vals1$setnum)
+    
+    vals<- select(base1,-c(setnum,Setores))
+    valsmat<- data.matrix(vals)
+    
+    
+    
+    Y <- matrix(c(rep.int(0,(Setornum-1)),invest,rep.int(0,(67-Setornum))),nrow=67)
+    X <- valsmat %*% Y 
+    delta <- X-valsmat[,Setornum]
+    
+    
+    codigom<- CODMUN() 
+    alpha <- 1
+    beta <- 1
+    
+    fator_1 <- sum(base2[,Setornum+1])
+    
+    
+    
+    codigo_mun_b <- base3[base3$origem==codigom$codmun,2]
+    distancia_a_b <- base3[base3$origem==codigom$codmun,3]
+    
+    indice <- alpha*log(fator_1)+beta*log(1/distancia_a_b)
+    
+    base3_origem <- subset(base3,base3$origem==codigom$codmun)
+    base3_origem$indice <- indice 
+    
+    
+    base_final <- merge(base2,base3_origem,by.x="codmun", by.y = "origem", all=FALSE)
+    
+    indice_a <- alpha*log(fator_1)
+    efeito <- (indice/(indice_a+indice))*delta[Setornum,]
+    base_final$efeito <- efeito 
+    
+    basemap <- base_final %>% select(destino, mun_destino, uf_destino, distancia, efeito) %>% 
+      rename("Codigo Municipio de Destino" = "destino", "Municipio de Destino" = "mun_destino", "UF de Destino" = "uf_destino", "Distancia entre Municipio" = "distancia", "Efeito do Investimento" = "efeito")
+    
+    mapa <- merge(shp, basemap, by.x = "CD_MUN", by.y = "Codigo Municipio de Destino", duplicateGeoms = TRUE)
+    
+    lol<-head(UF(),1)
+    mapa1<- filter(mapa, SIGLA_UF == lol$uf)
+    
+    print(head(base_final,2))
+    print(head(basemap,2))
+    
     tmap_mode("view")
     
     tm <- tm_shape(mapa1) + 
-      tm_polygons("Efeito do Investimento",n = 7, palette = mycols, title = "Efeito do Investimento:")
+      tm_polygons("Efeito do Investimento",n = 7, palette = 'Blues', title = "Efeito do Investimento:", popup.vars= c("Municipio de Destino", "UF de Destino", "Distancia entre Municipio", "Efeito do Investimento") )
     tmap_leaflet(tm) 
     
   })
@@ -224,7 +230,7 @@ server <- function(input, output,session) {
     
   })
   output$tabela2<- renderTable({
-  
+    
     vals1<-SetorProdutivo()
     invest<-Investimento() 
     
@@ -268,7 +274,7 @@ server <- function(input, output,session) {
     tab2
     
     
-    })
+  })
   output$indicador <- renderText({
     "Feito para a materia Topicos Estatisticos pelos Alunos : Bruno, Carlo, Fabiana, Gilson, Rafael "
   })
