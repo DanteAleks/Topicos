@@ -9,9 +9,6 @@ library(tidyverse)
 require(rgdal)
 require(tmap)
 require(sf)
-library(shinyWidgets)
-library(DT)
-library(shinythemes)
 
 #Shape Municipios 2019
 shp<- st_read("BR_Municipios_2019.shp", stringsAsFactors = FALSE)
@@ -24,6 +21,7 @@ shp$CD_MUN<-substring(shp$CD_MUN, 1, 6)
 ###testes
 head(shp$CD_MUN,5)
 
+mycols <- c("#FFEEF3", "#DEB6AD", "#F06A8F", "#BB737A", "#CC6566","#5C243B","#532a3D")
 
 # Base 1: Matriz de Leontief
 base1 <- read.xlsx("2020-11-23-BASES-EMPREGO-E-RENDA.xlsx",sheet=6)
@@ -65,40 +63,37 @@ base3$distancia <- base3$distancia/1000
 
 
 
-ui <- fluidPage(setBackgroundColor("#155675"),
-                tags$img(src = "https://upload.wikimedia.org/wikipedia/commons/d/d0/S%C3%ADmbolo_da_UnB.png",
-                         width = "200px", height = "100px",
-                         style = "position:absolute;left:3em ;top:43em"),
-                navbarPage("Emprego e Renda - RondÃ´nia", position = 'static-top'),
-                theme=shinythemes::shinytheme('cerulean'),
-                fixedRow(
-                  column(2, 
-                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50",
-                                                       numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=100,min=100),
-                                                       selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
-                                                                   choices = base1$Setores,selected = NULL),
-                                                       
-                                                       selectInput(inputId ="mun",label = "Municipio", 
-                                                                   choices = sort(unique(base2_uf$NomeMun))),
-                                                       selectInput(inputId = "UF",label = "Estado do Efeito a Calcular", 
-                                                                   choices = sort(unique(base2$estado)),selected = NULL),
-                         )))),
-                  column(4, 
-                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50;;height:45.5em",
-                                                       leafletOutput("map",height = 600)))),
-                         fluidRow(column(12,wellPanel(
-                           textOutput('fonte')
-                         )))),
-                  column(6,
-                         fluidRow(column(6,wellPanel(style = "background-color: #fff; border-color: #2c3e50;height:45.5em",
-                                                     tableOutput('tabela'))),
-                                  column(6,wellPanel(style = "background-color: #fff; border-color: #2c3e50;height:45.5em",
-                                                     tableOutput('tabela2')))),
-                         fluidRow(column(12, wellPanel(style = "background-color: #fff; border-color: #2c3e50",
-                                                       textOutput('indicador')))
-                         )
-                  )
-                )
+ui <- fluidPage(
+  navbarPage("Emprego e Renda", position = 'static-top'),
+  theme=shinythemes::shinytheme('cosmo'),
+  fixedRow(
+    column(2, 
+           fluidRow(column(12, wellPanel(
+             numericInput(inputId = 'investimento',label ="Investimento em reais (R$)",value=100,min=100),
+             selectInput(inputId = "setor_produtivo",label ="Setor Produtivo", 
+                         choices = base1$Setores,selected = NULL),
+             
+             selectInput(inputId ="mun",label = "Municipio", 
+                         choices = sort(unique(base2_uf$NomeMun))),
+             selectInput(inputId = "UF",label = "Estado do Efeito a Calcular", 
+                         choices = sort(unique(base2$estado)),selected = NULL),
+           )))),
+    column(4, 
+           fluidRow(column(12, wellPanel(
+             leafletOutput("map",height = 600)))),
+           fluidRow(column(12,wellPanel(
+             textOutput('fonte')
+           )))),
+    column(6,
+           fluidRow(column(7,wellPanel(
+             tableOutput('tabela'))),
+             column(5,wellPanel(
+               tableOutput('tabela2')))),
+           fluidRow(column(12, wellPanel(
+             textOutput('indicador')))
+           )
+    )
+  )
 )
 
 server <- function(input, output,session) {
@@ -176,7 +171,7 @@ server <- function(input, output,session) {
     tmap_mode("view")
     
     tm <- tm_shape(mapa1) + 
-      tm_polygons("Efeito do Investimento",n = 7, palette = 'Blues', title = "Efeito do Investimento:", popup.vars= c("Municipio de Destino", "UF de Destino", "Distancia entre Municipio", "Efeito do Investimento") )
+      tm_polygons("Efeito do Investimento",n = 7, palette = mycols, title = "Efeito do Investimento:")
     tmap_leaflet(tm) 
     
   })
@@ -275,20 +270,14 @@ server <- function(input, output,session) {
     
   })
   output$indicador <- renderText({
-<<<<<<< HEAD
     "Trabalho da disciplina de Tópicos em Estatística 1.
-     Este aplicativo é um projeto da equipe de emprego e renda da disciplina de tópicos estatísticos da UnB e tem como objetivo representar o impacto que um investimento feito em um determinado setor
-     produtivo em um município do estado de Rondônia terá em outros setores e municípios do Brasil. A tabela à esquerda apresenta os municípios mais impactados pelo investimento, enquanto a tabela à direita
-     apresenta os menos impactados. O gráfico representa por cores o valor desses impactos em cada município por estado escolhido.
-     O grupo da disciplina é composto por Gilson Daniel, Bruno Brandão, Fabiana Mariquito, Carlo Aleksandr e Rafael Morum
+Este é um projeto da equipe de emprego e renda da disciplina de tópicos em estatística da UnB, em parceria do departamento de estatística com o IPEA. O grupo foi acompanhado e orientado pelo profissional
+Bruno Cruz. O aplicativo tem como objetivo representar o impacto que um investimento feito em um determinado setor produtivo e em um município do estado de Rondônia, escolhidos pelo usuário, terá em outros
+setores e municípios do Brasil. A tabela à esquerda apresenta os dez municípios mais impactados pelo investimento, enquanto a tabela à direita apresenta os dez menos impactados. O gráfico representa por
+cores o valor desses impactos em cada município por estado escolhido.
+O grupo da disciplina é composto por Gilson Daniel, Bruno Brandão, Fabiana Mariquito, Carlo Aleksandr e Rafael Morum
+
 "
-=======
-    "Este aplicativo tem como objetivo representar o impacto que, dado um investimento em um certo setor
-    produtivo e municipio do estado de Rondonia, este investimento tera em outros setores e municipios do 
-    Brasil, As tabelas apresentam os municipios mais impactados, assim como os de menor impacto. O grafico
-    representa por cores o valor desses impactos em cada estado.
-    Feito para a materia Topicos Estatisticos pelos Alunos : Bruno, Carlo, Fabiana, Gilson, Rafael "
->>>>>>> 15c5a253bc5c771dc4b19e5b1127814472ec5f2b
   })
   output$fonte <- renderText({
     "Fontes para tabelas e mapas: IBGE; Ministério da Economia - Secretaria do Trabalho; Nomination; Google Maps; Open Street Map; Geofabrik"
