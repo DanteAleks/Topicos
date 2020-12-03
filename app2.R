@@ -1,4 +1,4 @@
-setwd("C:/Users/carlo/Documents/Faculdade/Topicos/Shinny-Topicos/Topicos")
+setwd("C:/Documentos/Topicos")
 
 #install.packages("openxlsx")
 
@@ -281,18 +281,19 @@ server <- function(input, output,session) {
     tab2
     
   })
-  
   output$indicador <- renderText({
-   "Este é um projeto da equipe de emprego e renda da disciplina de topicos em estatistica da UnB, em parceria do departamento de estatistica com o IPEA. O grupo foi acompanhado e orientado pelo profissional
-Bruno Cruz. O aplicativo tem como objetivo representar o impacto que um investimento feito em um determinado setor produtivo e em um municipio do estado de Rondônia, escolhidos pelo usuario, tera em outros
-setores e municipios do Brasil. A tabela é esquerda apresenta os dez municipios mais impactados pelo investimento, enquanto a tabela a direita apresenta os dez menos impactados. O grafico representa por
-cores o valor desses impactos em cada municipio por estado escolhido.
-O grupo da disciplina é composto por Bruno Brandão,  Carlo Aleksandr, Fabiana Mariquito, Gilson Daniel e Rafael Morum"
+    "Este é um projeto da equipe de emprego e renda da disciplina Tópicos em Estatística 1, do Departamento de Estatística da Universidade de Brasília (UnB) 
+    com o Instituto de Pesquisa Econômica Aplicada (IPEA). O grupo foi demandado e orientado pelo profissional do IPEA,Bruno Cruz, autor da ideia do Dashboard. 
+    Apresenta como objetivo calcular uma simulação do impacto que um dado valor de investimento, feito em um setor produtivo e município do estado de Rondônia 
+    escolhido pelo usuário, terá em outros setores e municípios do Brasil. A tabela à esquerda apresenta os dez municipios mais impactados por esse investimento, 
+    enquanto a tabela à direita apresenta os dez municípios menos impactados. O gráfico apresenta por cores, o valor desses impactos em cada município por estado escolhido.
+    Equipe de trabalho: Bruno Brandão,  Carlo Aleksandr, Fabiana Mariquito, Gilson Daniel e Rafael Morum; 
+    Mentor: Bruno Cruz;
+    Professores: Jhames Sampaio e Ana Maria Nogales"
   })
   output$fonte <- renderText({
-    "Fontes para tabelas e mapas: IBGE; Minist?rio da Economia - Secretaria do Trabalho; Nomination; Google Maps; Open Street Map; Geofabrik"
-  })
-}
+    "Fontes: IBGE; Ministério da Economia - Secretaria do Trabalho; Nomination; Google Maps; Open Street Map; Geofabrik."
+  })}
 
 
 shinyApp(ui = ui, server = server)
